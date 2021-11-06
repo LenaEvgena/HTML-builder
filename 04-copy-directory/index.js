@@ -5,6 +5,7 @@ const fs = require('fs/promises');
 const dirPath = path.join(__dirname, folder);
 const newDirPath = path.join(__dirname, folderCopy);
 
+fs.mkdir(newDirPath, { recursive: true });
 async function copyFolder() {
   try {
     await fs.rm(newDirPath, { recursive: true });
