@@ -1,40 +1,50 @@
-const fs = require('fs').promises;
+const fs = require('fs');
 const path = require('path');
-const pathToStyles = path.join(__dirname, 'styles');
-const pathToBundleFolder = path.join(__dirname, 'project-dist');
-const pathToBundle = path.join(pathToBundleFolder, 'bundle.css');
 
-async function readFiles() {
-  try {
-    const files = await fs.readdir(pathToStyles, { withFileTypes: true });
-    await fs.rm(pathToBundle, { force: true });
+const filePathBundle = path.join(__dirname, 'project-dist/bundle.css');
+const filePathStyle = path.join(__dirname, 'styles');
 
-    files.forEach(async file => {
-      if (file.isFile() && path.extname(file.name) === '.css') {
-        const contents = await fs.readFile(path.join(pathToStyles, file.name), {
-          encoding: 'utf-8',
-        });
-
-        if (contents.length) {
-          await appendFile(contents);
+function mergeBundleCssFile() {
+  fs.promises.readdir(filePathStyle, { withFileTypes: true })
+    // If promise resolved and
+    // datas are fetched
+    .then(elements => {
+      for (let file of elements) {
+        if (file.isFile()) {
+          const extension = path.extname(file.name);
+          if (extension === '.css') {
+            // const pathFile = path.join(__dirname, `styles/${file.name}`)
+            fs.readFile(path.join(filePathStyle, file.name), 'utf-8', (err, content) => {
+              if (err) {
+                throw err;
+              }
+              fs.appendFile(filePathBundle, content, (err) => {
+                if (err) {
+                  throw  err;
+                }
+                console.log(`Styles ${file.name} merged to ${path.basename(filePathBundle)}!`);
+              });
+            });
+          }
         }
       }
+    })
+    // If promise is rejected
+    .catch(err => {
+      console.log(err);
     });
-  } catch (err) {
-    console.log(err);
+}
+
+// Clearing the contents of the bundle.css
+function clearBundleFile() {
+  if (filePathBundle) {
+    fs.promises.rm(filePathBundle, { recursive: true, force: true });
   }
 }
 
-async function appendFile(input) {
-  try {
-    await fs.appendFile(pathToBundle, input, function (err) {
-      if (err) {
-        throw err;
-      }
-    });
-  } catch (err) {
-    console.log(err);
-  }
+function createBundle() {
+  clearBundleFile();
+  mergeBundleCssFile();
 }
 
-readFiles();
+createBundle();
